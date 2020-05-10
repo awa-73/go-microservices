@@ -9,8 +9,9 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"shop.com/v1/handlers"
 	"time"
-	"titusdishon/coffee-shop/go-microservices/product-api/handlers"
+	"github.com/go-openapi/runtime/middleware"
 )
 
 
@@ -28,6 +29,11 @@ func main()  {
 	putRouter.HandleFunc("/{id:[0-9]+}", products.UpdateProduct)
 	postRouter.Use(products.MiddlewareProductValidation)
 	postRouter.HandleFunc("/", products.AddProduct)
+
+	ops:=middleware.RedocOpts{SpecURL:"/swagger.yaml"}
+	sh:= middleware.Redoc(ops,nil)
+	getRouter.Handle("/docs",sh)
+	getRouter.Handle("/swagger.yaml",http.FileServer(http.Dir("./")))
 	//server params
 	s:=http.Server{
 		Addr: ":9090",
@@ -51,5 +57,5 @@ func main()  {
 	sig:=<-sigChan
 	l.Println("Received terminate gracefully shutdown", sig)
 	tc,_:=context.WithTimeout(context.Background(), 30*time.Second)
-	s.Shutdown(tc)
+	_ = s.Shutdown(tc)
 }
